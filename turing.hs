@@ -5,18 +5,21 @@ data Move = Stay | MoveLeft | MoveRight
 run                             -- run a Turing Machine
   :: Eq q
   => c                          -- the blank symbol
-  -> [c]                        -- the input tape
-  -> ((q, c) -> (q, c, Move))   -- the transition function
+  -> [c]                        -- the input tape to the left
+  -> [c]                        -- the input tape to the right including head
   -> q                          -- the starting state
+  -> ((q, c) -> (q, c, Move))   -- the transition function
   -> [q]                        -- the acceptance states
   -> [(q, [c], [c])]            -- the list of all future states
-run b s d q0 f = run' (repeat b) (s ++ repeat b) d q0 f
+run b as bs q0 d f = (q0, as', bs') : run' as' bs' q0 d f
   where
-    run' as bs d q0 f =
-      case runOnce as bs d q0 f of
+    as' = as ++ repeat b
+    bs' = bs ++ repeat b
+    run' as bs q0 d f =
+      case runOnce as bs q0 d f of
         Nothing             -> []   -- halted
-        Just (q', as', bs') -> (q', as', bs') : run' as' bs' d q' f
-    runOnce (a:as) (b:bs) d q0 f
+        Just (q', as', bs') -> (q', as', bs') : run' as' bs' q' d f
+    runOnce (a:as) (b:bs) q0 d f
         | q0 `elem` f = Nothing     -- halted
         | otherwise   =
           case d (q0, b) of
